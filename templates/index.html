@@ -1,0 +1,44 @@
+
+<!DOCTYPE html><html><head><title>POS | Unity</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>.item-btn{height:90px; border:1px solid #ddd; background:#fff; border-radius:10px; cursor:pointer;} .low-stock{border:2px solid red!important;}</style></head>
+<body class="bg-light">
+<nav class="navbar navbar-dark bg-dark px-4 mb-3"><span class="navbar-brand">🏸 UNITY POS</span>
+<div class="ms-auto">{% if low_stock %}<span class="badge bg-danger me-2">Low Stock Alerts</span>{% endif %}<a href="/admin" class="btn btn-sm btn-outline-light me-2">Admin</a><a href="/logout" class="btn btn-sm btn-danger">Logout</a></div></nav>
+<div class="container-fluid px-4"><div class="row">
+    <div class="col-md-8">
+        <div class="row g-2 mb-4">
+            {% for p in products %}
+            <div class="col-md-3"><div class="item-btn p-2 text-center {% if p.Stock|int <= p.Limit|int %}low-stock{% endif %}" onclick="addToCart('{{p.Name}}', {{p.SellPrice}}, '{{p.Category}}')">
+                <div class="fw-bold small">{{p.Name}}</div><div class="text-primary fw-bold">₹{{p.SellPrice}}</div><small class="text-muted">Stock: {{p.Stock}}</small>
+            </div></div>{% endfor %}
+        </div>
+        <div class="card p-3 shadow-sm mb-4">
+            <h6>📅 Offline Booking</h6>
+            <div class="row g-2">
+                <div class="col-md-3"><input type="date" id="b_date" class="form-control" onchange="calcPrice()"></div>
+                <div class="col-md-3"><select id="b_slot" class="form-select" onchange="calcPrice()">{% for s in slots %}<option>{{s}}</option>{% endfor %}</select></div>
+                <div class="col-md-2"><input type="number" id="b_price" class="form-control" value="279"></div>
+                <div class="col-md-4"><input type="text" id="b_desc" class="form-control" placeholder="Player Name / Desc"></div>
+            </div><button class="btn btn-primary w-100 mt-2" onclick="addBooking()">Add Booking</button>
+        </div>
+        <h6>Today's Activity</h6>
+        <div class="card p-2"><table class="table table-sm small"><tbody>{% for t in today_txns %}<tr><td>{{t.Time}}</td><td>{{t.Item}}</td><td>₹{{t.SellTotal}}</td><td><form action="/undo_txn/{{t.ID}}" method="POST"><button class="btn btn-link text-danger p-0 small">Undo</button></form></td></tr>{% endfor %}</tbody></table></div>
+    </div>
+    <div class="col-md-4"><div class="card p-4 border-primary shadow sticky-top" style="top:10px;"><h5>Cart</h5><div id="cart-list" class="my-3"></div><div class="h4 fw-bold">Total: ₹<span id="cart-total">0</span></div><button class="btn btn-success w-100 mt-3" onclick="checkout()">Checkout</button></div></div>
+</div></div>
+<script>
+let cart = [];
+function calcPrice(){
+    const d = new Date(document.getElementById('b_date').value);
+    const s = document.getElementById('b_slot').value;
+    const day = d.getDay(); const isPM = s.includes("PM"); const hr = parseInt(s);
+    let p = 279;
+    if(day >= 1 && day <= 4 && isPM && hr >= 5) p = 333;
+    if((day == 5 && isPM && hr >= 5) || day == 0 || day == 6) p = 379;
+    document.getElementById('b_price').value = p;
+}
+function addToCart(n, p, c){ let ex = cart.find(i=>i.name===n); if(ex) ex.qty++; else cart.push({name:n, price:p, category:c, qty:1}); render(); }
+function addBooking(){ const n = document.getElementById('b_desc').value; if(!n) return alert("Enter Name"); cart.push({name:`Booking: ${n}`, price:parseFloat(document.getElementById('b_price').value), category:'Booking', qty:1}); render(); }
+function render(){ let h='', t=0; cart.forEach(it=>{ t+=it.price*it.qty; h+=`<div class="d-flex justify-content-between"><span>${it.name} x${it.qty}</span><b>₹${it.price*it.qty}</b></div>`; }); document.getElementById('cart-list').innerHTML=h; document.getElementById('cart-total').innerText=t; }
+function checkout(){ fetch('/submit_order', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({items:cart, desc:document.getElementById('b_desc').value})}).then(()=>location.reload()); }
+</script></body></html>

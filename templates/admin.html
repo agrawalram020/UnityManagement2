@@ -1,0 +1,36 @@
+
+<!DOCTYPE html><html><head><title>Admin</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"><script src="https://cdn.jsdelivr.net/npm/chart.js"></script></head>
+<body class="bg-light p-4"><div class="container-fluid">
+    <div class="row g-3 mb-4">
+        <div class="col-md-3"><div class="card p-3 shadow-sm bg-primary text-white"><h6>Revenue</h6><h3>₹{{revenue}}</h3></div></div>
+        <div class="col-md-3"><div class="card p-3 shadow-sm bg-danger text-white"><h6>Expenses</h6><h3>₹{{expenses_total}}</h3></div></div>
+        <div class="col-md-3"><div class="card p-3 shadow-sm bg-success text-white"><h6>Profit</h6><h3>₹{{profit}}</h3></div></div>
+        <div class="col-md-3"><a href="/" class="btn btn-outline-dark w-100 pt-3">Back to POS</a></div>
+    </div>
+    <div class="row g-4">
+        <div class="col-md-8">
+            <div class="card p-4 shadow-sm mb-4">
+                <h6>Manage Inventory</h6>
+                <form action="/product/add" method="POST" class="row g-2 mb-3 bg-light p-2">
+                    <div class="col-md-3"><input name="name" class="form-control" placeholder="Name"></div>
+                    <div class="col-md-2"><select name="cat" class="form-select"><option>Sale</option><option>Rent</option></select></div>
+                    <div class="col-md-2"><input name="buy" class="form-control" placeholder="Buy"></div>
+                    <div class="col-md-2"><input name="sell" class="form-control" placeholder="Sell"></div>
+                    <div class="col-md-1"><input name="stock" class="form-control" placeholder="+Q"></div>
+                    <div class="col-md-2"><input name="low_limit" class="form-control" value="5"></div>
+                    <button class="btn btn-sm btn-primary mt-2">Update</button>
+                </form>
+                <table class="table table-sm"><thead><tr><th>Name</th><th>Stock</th><th>Buy</th><th>Sell</th></tr></thead><tbody>{% for p in products %}<tr><td>{{p.Name}}</td><td>{{p.Stock}}</td><td>{{p.BuyPrice}}</td><td>{{p.SellPrice}}</td></tr>{% endfor %}</tbody></table>
+            </div>
+            <div class="card p-4 shadow-sm"><h6>Revenue Split</h6><canvas id="revChart" style="max-height:250px;"></canvas></div>
+        </div>
+        <div class="col-md-4">
+            <div class="card p-4 border-danger border-start border-4 mb-4"><h6>Log Expense</h6><form action="/add_expense" method="POST"><input name="title" class="form-control mb-2" placeholder="Title"><input name="amount" class="form-control mb-2" placeholder="Amount"><select name="cat" class="form-select mb-3"><option>Salary</option><option>Electricity</option><option>Misc</option></select><button class="btn btn-danger btn-sm w-100">Save</button></form></div>
+            <div class="card p-4 shadow-sm mb-4"><h6>Expense Ledger</h6><table class="table table-sm small"><tbody>{% for e in expenses %}<tr><td>{{e.Time}}</td><td>{{e.Title}}</td><td class="text-danger">₹{{e.Amount}}</td></tr>{% endfor %}</tbody></table></div>
+            <div class="card p-4 shadow-sm"><h6>Stock Inward History</h6><ul class="list-group list-group-flush small">{% for h in stock_history %} <li class="list-group-item d-flex justify-content-between"><span>+{{h.Qty}} {{h.Item}}</span></li> {% endfor %}</ul></div>
+        </div>
+    </div>
+</div>
+<script>
+    new Chart(document.getElementById('revChart'), { type: 'pie', data: { labels: Object.keys({{chart_data|tojson}}), datasets: [{ data: Object.values({{chart_data|tojson}}), backgroundColor:['#0d6efd','#198754','#ffc107'] }] } });
+</script></body></html>
